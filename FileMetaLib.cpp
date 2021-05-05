@@ -1,14 +1,8 @@
-#include "ShObjIdl.h"
+#include "shobjidl_core.h"
 #include "propkey.h"
 #include "propvarutil.h"
 #include "jni.h"
-
-void updateStringPropertyValue(PROPERTYKEY key, PCWSTR value, IPropertyStore* store) {
-    PROPVARIANT prop;
-    InitPropVariantFromString(value, &prop);
-
-    store->SetValue(key, prop);
-}
+// #include "comdef.h"
 
 PROPERTYKEY getPropertyKey(jint propOrdinal) {
     switch(propOrdinal) {
@@ -21,21 +15,52 @@ PROPERTYKEY getPropertyKey(jint propOrdinal) {
 
 
 
-extern "C" JNIEXPORT void JNICALL Java_degubi_FileMeta_init(JNIEnv* env, jclass clazz) {
+extern "C" JNIEXPORT void JNICALL Java_filemetalib_FileMeta_init(JNIEnv* env, jclass clazz) {
     CoInitialize(NULL);
 }
 
-extern "C" JNIEXPORT void JNICALL Java_degubi_FileMeta_updateStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey, jstring propertyValue) {
+extern "C" JNIEXPORT jstring JNICALL Java_filemetalib_FileMeta_readStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
     IPropertyStore* store = NULL;
-    const jchar* convertedFilePath = env->GetStringChars(filePath, 0);
-    const jchar* convertedPropertyValue = env->GetStringChars(propertyValue, 0);
+    const jchar* convertedFilePath = env->GetStringChars(filePath, JNI_FALSE);
 
-    SHGetPropertyStoreFromParsingName((wchar_t*) convertedFilePath, NULL, GPS_READWRITE, __uuidof(IPropertyStore), (void**)&store);
-    updateStringPropertyValue(getPropertyKey(propertyKey), (wchar_t*) convertedPropertyValue, store);
+    HRESULT res = SHGetPropertyStoreFromParsingName((PCWSTR) convertedFilePath, NULL, GPS_READWRITE, __uuidof(IPropertyStore), (void**)&store);
+    env->ReleaseStringChars(filePath, convertedFilePath);
 
+    // TODO: Propagate errors
+    /*if(!res) {
+        _com_error err = _com_error(res);
+        LPCTSTR errMsg = err.ErrorMessage();
+    }*/
+
+    PROPVARIANT variant;
+    store->GetValue(getPropertyKey(propertyKey), &variant);
+
+    jstring value = variant.vt == VT_EMPTY ? nullptr : env->NewString((jchar*) variant.pwszVal, wcslen(variant.pwszVal));
+
+    store->Release();
+    return value;
+}
+
+extern "C" JNIEXPORT void JNICALL Java_filemetalib_FileMeta_writeStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey, jstring propertyValue) {
+    PROPVARIANT prop;
+    const jchar* convertedPropertyValue = env->GetStringChars(propertyValue, JNI_FALSE);
+
+    InitPropVariantFromString((PCWSTR) convertedPropertyValue, &prop);
+    env->ReleaseStringChars(propertyValue, convertedPropertyValue);
+
+    IPropertyStore* store;
+    const jchar* convertedFilePath = env->GetStringChars(filePath, JNI_FALSE);
+
+    HRESULT res = SHGetPropertyStoreFromParsingName((PCWSTR) convertedFilePath, NULL, GPS_READWRITE, __uuidof(IPropertyStore), (void**)&store);
+    env->ReleaseStringChars(filePath, convertedFilePath);
+
+    // TODO: Propagate errors
+    /*if(!res) {
+        _com_error err = _com_error(res);
+        LPCTSTR errMsg = err.ErrorMessage();
+    }*/
+
+    store->SetValue(getPropertyKey(propertyKey), prop);
     store->Commit();
     store->Release();
-
-    env->ReleaseStringChars(filePath, convertedFilePath);
-    env->ReleaseStringChars(propertyValue, convertedPropertyValue);
 }
