@@ -12,7 +12,9 @@ public class MediaPropertyTests {
 
     @AfterAll
     public static void postTest() {
-        MediaPropertyUtils.writeProperty(mp4Path, MediaProperty.TITLE, "");
+        MediaPropertyUtils.clearProperty(mp4Path, MediaProperty.TITLE);
+        MediaPropertyUtils.clearProperty(mp4Path, MediaProperty.COMMENT);
+        MediaPropertyUtils.clearProperty(mp4Path, MediaProperty.YEAR);
     }
 
     @Test
@@ -39,6 +41,27 @@ public class MediaPropertyTests {
         assertFalse(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.LANGUAGE));
         assertTrue(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.YEAR));
         assertTrue(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.TITLE));
+    }
+
+    @Test
+    @Order(1)
+    public void testNonExistingProperty() {
+        assertThrows(IllegalArgumentException.class, () -> MediaPropertyUtils.readProperty(mp4Path, MediaProperty.COPYRIGHT));
+        assertEquals(Optional.empty(), MediaPropertyUtils.readOptionalProperty(mp4Path, MediaProperty.KEYWORDS));
+    }
+
+    @Test
+    @Order(2)
+    public void testClearProperty() {
+        assertFalse(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
+
+        MediaPropertyUtils.writeProperty(mp4Path, MediaProperty.COMMENT, "yo");
+
+        assertTrue(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
+
+        MediaPropertyUtils.clearProperty(mp4Path, MediaProperty.COMMENT);
+
+        assertFalse(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
     }
 
 

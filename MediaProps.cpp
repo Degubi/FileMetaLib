@@ -4,6 +4,8 @@
 #include "jni.h"
 // #include "comdef.h"
 
+const int NULL_INT_VALUE = -1;  // This is fine because all of the number media property types are VT_UI4, which is unsigned
+
 static PROPERTYKEY getPropertyKey(jint propOrdinal) {
     switch(propOrdinal) {
         case 0: return PKEY_Author;
@@ -58,6 +60,13 @@ extern "C" JNIEXPORT jboolean JNICALL Java_mediaprops_MediaPropertyUtils_hasMedi
     return getPropertyValue(filePath, propertyKey, env).vt == VT_EMPTY ? JNI_FALSE : JNI_TRUE;
 }
 
+extern "C" JNIEXPORT void JNICALL Java_mediaprops_MediaPropertyUtils_clearMediaProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
+    PROPVARIANT prop;
+    prop.vt = VT_EMPTY;
+
+    writePropertyValue(filePath, propertyKey, &prop, env);
+}
+
 extern "C" JNIEXPORT jstring JNICALL Java_mediaprops_MediaPropertyUtils_readStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
     PROPVARIANT variant = getPropertyValue(filePath, propertyKey, env);
 
@@ -67,7 +76,7 @@ extern "C" JNIEXPORT jstring JNICALL Java_mediaprops_MediaPropertyUtils_readStri
 extern "C" JNIEXPORT jint JNICALL Java_mediaprops_MediaPropertyUtils_readIntProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
     PROPVARIANT variant = getPropertyValue(filePath, propertyKey, env);
 
-    return variant.vt == VT_EMPTY ? -1 : variant.intVal;
+    return variant.vt == VT_EMPTY ? NULL_INT_VALUE : variant.intVal;
 }
 
 extern "C" JNIEXPORT void JNICALL Java_mediaprops_MediaPropertyUtils_writeStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey, jstring propertyValue) {
