@@ -2,7 +2,7 @@
 #include "propkey.h"
 #include "propvarutil.h"
 #include "jni.h"
-// #include "comdef.h"
+#include "comdef.h"
 
 const int NULL_INT_VALUE = -1;  // This is fine because all of the number media property types are VT_UI4, which is unsigned
 
@@ -26,29 +26,47 @@ static IPropertyStore* createStoreForFile(jstring filePath, JNIEnv* env) {
 
     env->ReleaseStringChars(filePath, convertedFilePath);
 
-    /*if(!SUCCEEDED(res)) {
-        _com_error err = _com_error(res);
-        LPCTSTR errMsg = err.ErrorMessage();
-    }*/
+    if(!SUCCEEDED(res)) {
+        jclass unchckdExClass = env->FindClass("java/io/UncheckedIOException");
+        jclass fileSysExClass = env->FindClass("java/nio/file/FileSystemException");
+
+        jmethodID unchckdExClassConstructor = env->GetMethodID(unchckdExClass, "<init>", "(Ljava/io/IOException;)V");
+        jmethodID fileSysExConstructor = env->GetMethodID(fileSysExClass, "<init>", "(Ljava/lang/String;)V");
+
+        jstring errorMsg = env->NewStringUTF((char*) _com_error(res).ErrorMessage());
+        jthrowable fileSysException = (jthrowable) env->NewObject(fileSysExClass, fileSysExConstructor, errorMsg);
+        jthrowable unchckdException = (jthrowable) env->NewObject(unchckdExClass, unchckdExClassConstructor, fileSysException);
+
+        env->Throw(unchckdException);
+
+        return nullptr;
+    }
 
     return store;
 }
 
 static PROPVARIANT getPropertyValue(jstring filePath, jint propertyKey, JNIEnv* env) {
     IPropertyStore* store = createStoreForFile(filePath, env);
-    PROPVARIANT variant;
+    PROPVARIANT prop;
 
-    store->GetValue(getPropertyKey(propertyKey), &variant);
-    store->Release();
+    if(store != nullptr) {
+        store->GetValue(getPropertyKey(propertyKey), &prop);
+        store->Release();
+    }else{
+        prop.vt = VT_EMPTY;
+    }
 
-    return variant;
+    return prop;
 }
 
 static void writePropertyValue(jstring filePath, jint propertyKey, PROPVARIANT* prop, JNIEnv* env) {
     IPropertyStore* store = createStoreForFile(filePath, env);
-    store->SetValue(getPropertyKey(propertyKey), *prop);
-    store->Commit();
-    store->Release();
+
+    if(store != nullptr) {
+        store->SetValue(getPropertyKey(propertyKey), *prop);
+        store->Commit();
+        store->Release();
+    }
 }
 
 
