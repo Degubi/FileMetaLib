@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import mediaprops.exception.*;
 import org.junit.jupiter.api.*;
 
 public class MediaPropertyTests {
@@ -14,114 +15,95 @@ public class MediaPropertyTests {
 
     @AfterAll
     public static void postTest() {
-        MediaPropertyUtils.clearProperty(mp4Path, MediaProperty.TITLE);
-        MediaPropertyUtils.clearProperty(mp4Path, MediaProperty.COMMENT);
-        MediaPropertyUtils.clearProperty(mp4Path, MediaProperty.YEAR);
+        MediaFileUtils.clearProperty(mp4Path, MediaProperty.TITLE);
+        MediaFileUtils.clearProperty(mp4Path, MediaProperty.COMMENT);
+        MediaFileUtils.clearProperty(mp4Path, MediaProperty.YEAR);
+    }
+
+
+    @Test
+    public void testWriteFileInUse() {
+        useFileAlreadInUsage(() -> assertThrows(MediaFileIOException.class, () -> MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, 200)));
+    }
+
+    @Test
+    public void testReadFileInUse() {
+        useFileAlreadInUsage(() -> assertThrows(MediaFileIOException.class, () -> MediaFileUtils.readProperty(mp4Path, MediaProperty.COMMENT)));
+    }
+
+    @Test
+    public void testWriteWithInvalidIntegerValue() {
+        assertThrows(IllegalArgumentException.class, () -> MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, -3));
+    }
+
+    @Test
+    public void testReadFromNonMediaFile() {
+        assertThrows(NonMediaFileException.class, () -> MediaFileUtils.readProperty(txtPath, MediaProperty.COMMENT));
+    }
+
+    @Test
+    public void testWriteToNonMediaFile() {
+        assertThrows(NonMediaFileException.class, () -> MediaFileUtils.writeProperty(txtPath, MediaProperty.YEAR, 200));
+    }
+
+    @Test
+    public void testValidMediaFile() {
+        assertTrue(MediaFileUtils.isMediaFile(mp4Path));
+    }
+
+    @Test
+    public void testInvalidMediaFile() {
+        assertFalse(MediaFileUtils.isMediaFile(txtPath));
     }
 
 
     @Test
     @Order(0)
-    public void testStringProperty() {
+    public void testWriteAndReadStringProperty() {
         var value = generateString();
 
-        MediaPropertyUtils.writeProperty(mp4Path, MediaProperty.TITLE, value);
-        assertEquals(value, MediaPropertyUtils.readProperty(mp4Path, MediaProperty.TITLE));
+        MediaFileUtils.writeProperty(mp4Path, MediaProperty.TITLE, value);
+        assertEquals(value, MediaFileUtils.readProperty(mp4Path, MediaProperty.TITLE));
+        assertTrue(MediaFileUtils.hasProperty(mp4Path, MediaProperty.TITLE));
     }
 
     @Test
     @Order(0)
-    public void testIntegerProperty() {
+    public void testWriteAndReadIntegerProperty() {
         var value = generateInt();
 
-        MediaPropertyUtils.writeProperty(mp4Path, MediaProperty.YEAR, value);
-        assertEquals(value, MediaPropertyUtils.readProperty(mp4Path, MediaProperty.YEAR));
+        MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, value);
+        assertEquals(value, MediaFileUtils.readProperty(mp4Path, MediaProperty.YEAR));
+        assertTrue(MediaFileUtils.hasProperty(mp4Path, MediaProperty.YEAR));
+    }
+
+
+    @Test
+    @Order(0)
+    public void testDoesntHaveProperty() {
+        assertFalse(MediaFileUtils.hasProperty(mp4Path, MediaProperty.LANGUAGE));
+    }
+
+    @Test
+    @Order(0)
+    public void testNonExistingPropertyRead() {
+        assertThrows(IllegalArgumentException.class, () -> MediaFileUtils.readProperty(mp4Path, MediaProperty.COPYRIGHT));
+        assertEquals(Optional.empty(), MediaFileUtils.readOptionalProperty(mp4Path, MediaProperty.KEYWORDS));
     }
 
 
     @Test
     @Order(1)
-    public void testHasProperty() {
-        assertFalse(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.LANGUAGE));
-        assertTrue(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.YEAR));
-        assertTrue(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.TITLE));
-    }
-
-    @Test
-    @Order(1)
-    public void testNonExistingProperty() {
-        assertThrows(IllegalArgumentException.class, () -> MediaPropertyUtils.readProperty(mp4Path, MediaProperty.COPYRIGHT));
-        assertEquals(Optional.empty(), MediaPropertyUtils.readOptionalProperty(mp4Path, MediaProperty.KEYWORDS));
-    }
-
-
-    @Test
-    @Order(2)
     public void testClearProperty() {
-        assertFalse(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
+        assertFalse(MediaFileUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
 
-        MediaPropertyUtils.writeProperty(mp4Path, MediaProperty.COMMENT, "yo");
+        MediaFileUtils.writeProperty(mp4Path, MediaProperty.COMMENT, "yo");
 
-        assertTrue(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
+        assertTrue(MediaFileUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
 
-        MediaPropertyUtils.clearProperty(mp4Path, MediaProperty.COMMENT);
+        MediaFileUtils.clearProperty(mp4Path, MediaProperty.COMMENT);
 
-        assertFalse(MediaPropertyUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
-    }
-
-
-    @Test
-    @Order(3)
-    public void testWriteFileInUse() {
-        useFileAlreadInUsage(() -> {
-            try {
-                MediaPropertyUtils.writeProperty(mp4Path, MediaProperty.YEAR, 200);
-                fail("Expected an FileSystemException when using a write operation on a file that is in use!");
-            }catch (UncheckedIOException e) {
-                assertTrue(e.getCause() instanceof FileSystemException);
-            }
-        });
-    }
-
-    @Test
-    @Order(3)
-    public void testReadFileInUse() {
-        useFileAlreadInUsage(() -> {
-            try {
-                MediaPropertyUtils.readProperty(mp4Path, MediaProperty.COMMENT);
-                fail("Expected an FileSystemException when using a read operation on a file that is in use!");
-            }catch (UncheckedIOException e) {
-                assertTrue(e.getCause() instanceof FileSystemException);
-            }
-        });
-    }
-
-    @Test
-    @Order(3)
-    public void testWriteWithInvalidIntegerValue() {
-        assertThrows(IllegalArgumentException.class, () -> MediaPropertyUtils.writeProperty(mp4Path, MediaProperty.YEAR, -3));
-    }
-
-    @Test
-    @Order(3)
-    public void testReadFromNonMediaFile() {
-        try {
-            MediaPropertyUtils.readProperty(txtPath, MediaProperty.COMMENT);
-            fail("Expected an FileSystemException when using a read operation on a file that is not a media file!");
-        }catch (UncheckedIOException e) {
-            assertTrue(e.getCause() instanceof FileSystemException);
-        }
-    }
-
-    @Test
-    @Order(3)
-    public void testWriteToNonMediaFile() {
-        try {
-            MediaPropertyUtils.writeProperty(txtPath, MediaProperty.YEAR, 200);
-            fail("Expected an FileSystemException when using a write operation on a file that is not a media file!");
-        }catch (UncheckedIOException e) {
-            assertTrue(e.getCause() instanceof FileSystemException);
-        }
+        assertFalse(MediaFileUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
     }
 
 
