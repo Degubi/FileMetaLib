@@ -1,0 +1,42 @@
+name: Package Publish
+
+on:
+  release:
+    types: [ created ]
+  workflow_dispatch:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+          
+    - name: Generate MediaProps.dll
+      shell: cmd
+      run: |
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        python build.py
+        
+    - name: Upload MediaProps.dll to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: MediaProps.dll
+          asset_name: MediaProps.dll
+          tag: ${{ github.ref }}
+
+    - name: Publish to GitHub Packages
+      run: mvn deploy
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
