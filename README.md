@@ -15,19 +15,28 @@
 **Maven dependency:** (via Github Packages)
 
 ```xml
+<repository>
+    <id>github</id>
+    <url>https://maven.pkg.github.com/Degubi/jmedia-properties</url>
+</repository>
+
 <dependency>
-  <groupId>degubi</groupId>
-  <artifactId>TODO</artifactId>
-  <version>TODO</version>
+    <groupId>degubi</groupId>
+    <artifactId>jmedia-properties</artifactId>
+    <version>1.0.0</version>
 </dependency>
 ```
 
+**Dll file:**
+<br><br>
+MediaProps.dll is **required**, download is available under 'Releases'
+
 **Jar file:**
 <br><br>
-TODO Jar file downloads are available under 'Packages'
+Jar file downloads are available under 'Packages'
 
 ## Usage
-All operations are found as static utilities in a single class: MediaFileUtils
+All operations are found as static utilities in a single class: MediaFileUtils<br>
 All supported media properties are found in an enum like class: MediaProperty
 
 ```java

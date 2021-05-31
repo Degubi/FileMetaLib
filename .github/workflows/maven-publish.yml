@@ -21,13 +21,13 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.8'
-          
+
     - name: Generate MediaProps.dll
       shell: cmd
       run: |
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        python build.py
-        
+        python build.py -actions
+
     - name: Upload MediaProps.dll to release
       uses: svenstaro/upload-release-action@v2
       with:
