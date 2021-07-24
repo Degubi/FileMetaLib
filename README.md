@@ -23,13 +23,10 @@
 <dependency>
     <groupId>degubi</groupId>
     <artifactId>jmedia-properties</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
-**Dll file:**
-<br><br>
-MediaProps.dll is **required**, download is available under 'Releases'
 
 **Jar file:**
 <br><br>
