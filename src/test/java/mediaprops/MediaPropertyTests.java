@@ -12,6 +12,7 @@ public class MediaPropertyTests {
     private static final Path mp4Path = Path.of("src/test/resources/test.mp4");
     private static final Path txtPath = Path.of("src/test/resources/test.txt");
     private static final Random rand = new Random();
+    private static final String executionFolder = Path.of("").toAbsolutePath().toString();
 
     @AfterAll
     public static void postTest() {
@@ -23,27 +24,41 @@ public class MediaPropertyTests {
 
     @Test
     public void testWriteFileInUse() {
-        useFileAlreadInUsage(() -> assertThrows(MediaFileIOException.class, () -> MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, 200)));
+        useFileAlreadInUsage(() -> {
+            var exception = assertThrows(MediaFileIOException.class, () -> MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, 200));
+
+            assertEquals("An IO error happened with the file: '" + executionFolder + "\\src\\test\\resources\\test.mp4', description: The process cannot access the file because it is being used by another process.\r\n", exception.getMessage());
+        });
     }
 
     @Test
     public void testReadFileInUse() {
-        useFileAlreadInUsage(() -> assertThrows(MediaFileIOException.class, () -> MediaFileUtils.readProperty(mp4Path, MediaProperty.COMMENT)));
+        useFileAlreadInUsage(() -> {
+            var exception = assertThrows(MediaFileIOException.class, () -> MediaFileUtils.readProperty(mp4Path, MediaProperty.COMMENT));
+
+            assertEquals("An IO error happened with the file: '" + executionFolder + "\\src\\test\\resources\\test.mp4', description: The process cannot access the file because it is being used by another process.\r\n", exception.getMessage());
+        });
     }
 
     @Test
     public void testWriteWithInvalidIntegerValue() {
-        assertThrows(IllegalArgumentException.class, () -> MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, -3));
+        var exception = assertThrows(IllegalArgumentException.class, () -> MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, -3));
+
+        assertEquals("Can't set property 'Year' to a negative value! Tried to passed in value: '-3'", exception.getMessage());
     }
 
     @Test
     public void testReadFromNonMediaFile() {
-        assertThrows(NonMediaFileException.class, () -> MediaFileUtils.readProperty(txtPath, MediaProperty.COMMENT));
+        var exception = assertThrows(NonMediaFileException.class, () -> MediaFileUtils.readProperty(txtPath, MediaProperty.COMMENT));
+
+        assertEquals("The given file is not a media file: '" + executionFolder + "\\src\\test\\resources\\test.txt'\r\n", exception.getMessage());
     }
 
     @Test
     public void testWriteToNonMediaFile() {
-        assertThrows(NonMediaFileException.class, () -> MediaFileUtils.writeProperty(txtPath, MediaProperty.YEAR, 200));
+        var exception = assertThrows(NonMediaFileException.class, () -> MediaFileUtils.writeProperty(txtPath, MediaProperty.YEAR, 200));
+
+        assertEquals("The given file is not a media file: '" + executionFolder + "\\src\\test\\resources\\test.txt'\r\n", exception.getMessage());
     }
 
     @Test
@@ -87,7 +102,9 @@ public class MediaPropertyTests {
     @Test
     @Order(0)
     public void testNonExistingPropertyRead() {
-        assertThrows(IllegalArgumentException.class, () -> MediaFileUtils.readProperty(mp4Path, MediaProperty.COPYRIGHT));
+        var exception = assertThrows(IllegalArgumentException.class, () -> MediaFileUtils.readProperty(mp4Path, MediaProperty.COPYRIGHT));
+
+        assertEquals("Property 'Copyright' doesn't exist on file: '" + executionFolder + "\\src\\test\\resources\\test.mp4'", exception.getMessage());
         assertEquals(Optional.empty(), MediaFileUtils.readOptionalProperty(mp4Path, MediaProperty.KEYWORDS));
     }
 

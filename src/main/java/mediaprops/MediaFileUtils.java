@@ -20,13 +20,13 @@ public final class MediaFileUtils {
     /**
      * Function for reading out the value of a property. This function throws an {@link IllegalArgumentException} when the given property is empty
      * @param <T> Property value type
-     * @param file The file to work with. If the file doesn't exist an {@link FileDoesntExistException} gets thrown
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
      * @param property The property to read the value of
      * @return Returns value of the given property or throws an {@link IllegalArgumentException} if the given property is empty
      * If the given file is not a media file then a {@link NonMediaFileException} gets thrown
      * If the operation fails because of a file system error (e.g the file is in use) a {@link MediaFileIOException} gets thrown
      */
-    public static<T> T readProperty(Path file, MediaProperty<T> property) throws IllegalArgumentException, FileDoesntExistException, MediaFileIOException, NonMediaFileException {
+    public static<T> T readProperty(Path file, MediaProperty<T> property) throws IllegalArgumentException, FileDoesNotExistException, MediaFileIOException, NonMediaFileException {
         var pathStr = checkedPath(file);
 
         switch(property.type) {
@@ -51,13 +51,13 @@ public final class MediaFileUtils {
     /**
      * Function for reading out the value of a property. This function doesn't throw when the given property is empty
      * @param <T> Property value type
-     * @param file The file to work with. If the file doesn't exist an {@link FileDoesntExistException} gets thrown
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
      * @param property The property to read the value of
      * @return Returns the value boxed in an Optional<T> or Optional.empty if the given property is empty
      * If the given file is not a media file then a {@link NonMediaFileException} gets thrown
      * If the operation fails because of a file system error (e.g the file is in use) a {@link MediaFileIOException} gets thrown
      */
-    public static<T> Optional<T> readOptionalProperty(Path file, MediaProperty<T> property) throws FileDoesntExistException, MediaFileIOException, NonMediaFileException {
+    public static<T> Optional<T> readOptionalProperty(Path file, MediaProperty<T> property) throws FileDoesNotExistException, MediaFileIOException, NonMediaFileException {
         var pathStr = checkedPath(file);
 
         switch(property.type) {
@@ -75,47 +75,47 @@ public final class MediaFileUtils {
 
     /**
      * Function for checking if a given property is set on a file
-     * @param file The file to work with. If the file doesn't exist an {@link FileDoesntExistException} gets thrown
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
      * @param property The property to check
      * @return Returns true if the given file has the passed in property set
      * If the given file is not a media file then a {@link NonMediaFileException} gets thrown
      * If the operation fails because of a file system error (e.g the file is in use) a {@link MediaFileIOException} gets thrown
      */
-    public static boolean hasProperty(Path file, MediaProperty<?> property) throws FileDoesntExistException, MediaFileIOException, NonMediaFileException {
+    public static boolean hasProperty(Path file, MediaProperty<?> property) throws FileDoesNotExistException, MediaFileIOException, NonMediaFileException {
         return hasMediaProperty(checkedPath(file), property.propOrdinal);
     }
 
     /**
      * Function for checking if a given file is a valid media file
-     * @param file The file to work with. If the file doesn't exist an {@link FileDoesntExistException} gets thrown
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
      * @return Returns true if the given file is a valid media file
      */
-    public static boolean isMediaFile(Path file) throws FileDoesntExistException {
+    public static boolean isMediaFile(Path file) throws FileDoesNotExistException {
         return isValidMediaFile(checkedPath(file));
     }
 
     /**
      * Function for clearing out the value of a property
-     * @param file The file to work with. If the file doesn't exist an {@link FileDoesntExistException} gets thrown
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
      * @param property The property to clear
      * If the given file is not a media file then a {@link NonMediaFileException} gets thrown
      * If the operation fails because of a file system error (e.g the file is in use) a {@link MediaFileIOException} gets thrown
      */
-    public static void clearProperty(Path file, MediaProperty<?> property) throws FileDoesntExistException, MediaFileIOException, NonMediaFileException {
+    public static void clearProperty(Path file, MediaProperty<?> property) throws FileDoesNotExistException, MediaFileIOException, NonMediaFileException {
         clearMediaProperty(checkedPath(file), property.propOrdinal);
     }
 
     /**
      * Function for writing a value to a property. When null is passed the given property is cleared
      * @param <T> Property value type
-     * @param file The file to work with. If the file doesn't exist an {@link FileDoesntExistException} gets thrown
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
      * @param property The property to write the value of
      * @param value Value to write, pass null to clear the property.
      * If the property's type is 'int' only positive values are accepted, otherwise a {@link IllegalArgumentException} gets thrown
      * If the given file is not a media file then a {@link NonMediaFileException} gets thrown
      * If the operation fails because of a file system error (e.g the file is in use) a {@link MediaFileIOException} gets thrown
      */
-    public static<T> void writeProperty(Path file, MediaProperty<T> property, T value) throws IllegalArgumentException, FileDoesntExistException, MediaFileIOException, NonMediaFileException {
+    public static<T> void writeProperty(Path file, MediaProperty<T> property, T value) throws IllegalArgumentException, FileDoesNotExistException, MediaFileIOException, NonMediaFileException {
         var absPath = checkedPath(file);
 
         if(value == null) {
@@ -139,10 +139,10 @@ public final class MediaFileUtils {
     }
 
 
-    private static String checkedPath(Path file) throws FileDoesntExistException {
+    private static String checkedPath(Path file) throws FileDoesNotExistException {
         var absPath = file.toAbsolutePath();
         if(!Files.exists(absPath)) {
-            throw new FileDoesntExistException("File doesn't exist: '" + file + "'");
+            throw new FileDoesNotExistException("File doesn't exist: '" + file + "'");
         }
 
         return absPath.toString();
