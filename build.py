@@ -1,5 +1,6 @@
 from subprocess import call
-from os import remove, environ
+from os import remove, environ, path, makedirs
+from shutil import move
 from sys import argv
 
 JAVA_HOME = environ.get('JAVA_HOME')
@@ -11,3 +12,8 @@ call(f'"C:/Program Files (x86)/Microsoft Visual Studio/2019/{VCVARS_FILE_DIR}/VC
 remove('MediaProps.obj')
 remove('MediaProps.exp')
 remove('MediaProps.lib')
+
+if not path.exists('./src/main/resources'):
+    makedirs('./src/main/resources')
+
+move('MediaProps.dll', './src/main/resources/MediaProps.dll')

@@ -1,5 +1,6 @@
 package mediaprops;
 
+import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import mediaprops.exception.*;
@@ -13,8 +14,15 @@ public final class MediaFileUtils {
     private static final int NULL_UINT_VALUE = -1;
 
     static {
-        System.loadLibrary("MediaProps");
-        init();
+        try(var dllInputStream = MediaFileUtils.class.getResourceAsStream("/MediaProps.dll")) {
+            var dllOutputPath = Path.of(System.getProperty("java.io.tmpdir") + "/MediaProps.dll");
+
+            Files.copy(dllInputStream, dllOutputPath, StandardCopyOption.REPLACE_EXISTING);
+            System.load(dllOutputPath.toAbsolutePath().toString());
+            init();
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to extract MediaProps.dll!", e);
+        }
     }
 
     /**
