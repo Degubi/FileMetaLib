@@ -16,6 +16,7 @@ static PROPERTYKEY getPropertyKey(jint propOrdinal) {
         case 5: return PKEY_Media_SubTitle;
         case 6: return PKEY_Media_Year;
         case 7: return PKEY_Title;
+        case 8: return PKEY_Video_Director;
     }
 }
 

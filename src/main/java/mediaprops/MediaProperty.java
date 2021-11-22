@@ -18,6 +18,7 @@ public final class MediaProperty<T> {
     public static final MediaProperty<String>  SUB_TITLE = new MediaProperty<>(5, STRING_FIELD_TYPE, "Subtitle");
     public static final MediaProperty<Integer> YEAR      = new MediaProperty<>(6, UINT_FIELD_TYPE, "Year");
     public static final MediaProperty<String>  TITLE     = new MediaProperty<>(7, STRING_FIELD_TYPE, "Title");
+    public static final MediaProperty<String>  DIRECTOR  = new MediaProperty<>(8, STRING_FIELD_TYPE, "Director");
 
     final int propOrdinal;
     final int type;
