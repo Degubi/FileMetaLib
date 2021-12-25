@@ -14,14 +14,14 @@ public final class MediaFileUtils {
     private static final int NULL_UINT_VALUE = -1;
 
     static {
-        try(var dllInputStream = MediaFileUtils.class.getResourceAsStream("/MediaProps.dll")) {
-            var dllOutputPath = Path.of(System.getProperty("java.io.tmpdir") + "/MediaProps.dll");
+        try(var dllInputStream = MediaFileUtils.class.getResourceAsStream("/MediaPropUtils.dll")) {
+            var dllOutputPath = Path.of(System.getProperty("java.io.tmpdir") + "/MediaPropUtils.dll");
 
             Files.copy(dllInputStream, dllOutputPath, StandardCopyOption.REPLACE_EXISTING);
             System.load(dllOutputPath.toAbsolutePath().toString());
             init();
         } catch (IOException e) {
-            throw new IllegalStateException("Unable to extract MediaProps.dll!", e);
+            throw new IllegalStateException("Unable to extract MediaPropUtils.dll!", e);
         }
     }
 
@@ -56,6 +56,22 @@ public final class MediaFileUtils {
         }
     }
 
+    public static<T> T readOrDefaultProperty(Path file, MediaProperty<T> property, T defaultValue) {
+        var pathStr = checkedPath(file);
+
+        switch(property.type) {
+            case MediaProperty.STRING_FIELD_TYPE:
+                var strRes = readStringProperty(pathStr, property.propOrdinal);
+
+                return strRes == null ? defaultValue : (T) strRes;
+            case MediaProperty.UINT_FIELD_TYPE:
+                var intRes = readIntProperty(pathStr, property.propOrdinal);
+
+                return intRes == NULL_UINT_VALUE ? defaultValue : (T) (Integer) intRes;
+            default: return null; // Can't happen
+        }
+    }
+
     /**
      * Function for reading out the value of a property. This function doesn't throw when the given property is empty
      * @param <T> Property value type
@@ -79,6 +95,11 @@ public final class MediaFileUtils {
                 return intRes == NULL_UINT_VALUE ? Optional.empty() : Optional.of((T) (Integer) intRes);
             default: return null; // Can't happen
         }
+    }
+
+    // TODO: docs
+    public static MediaPropertyMap readAllProperties(Path file) throws FileDoesNotExistException, MediaFileIOException, NonMediaFileException {
+        return readAllMediaProperties(checkedPath(file));
     }
 
     /**
@@ -113,6 +134,16 @@ public final class MediaFileUtils {
         clearMediaProperty(checkedPath(file), property.propOrdinal);
     }
 
+    // TODO: docs
+    public static void clearProperties(Path file, MediaProperty<?>... properties) {
+        // TODO implement this
+    }
+
+    // TODO: docs
+    public static void clearAllProperties(Path file) {
+        // TODO implement this
+    }
+
     /**
      * Function for writing a value to a property. When null is passed the given property is cleared
      * @param <T> Property value type
@@ -124,8 +155,27 @@ public final class MediaFileUtils {
      * If the operation fails because of a file system error (e.g the file is in use) a {@link MediaFileIOException} gets thrown
      */
     public static<T> void writeProperty(Path file, MediaProperty<T> property, T value) throws IllegalArgumentException, FileDoesNotExistException, MediaFileIOException, NonMediaFileException {
+        writePropertyInternal(checkedPath(file), property, value);
+    }
+
+    // TODO: docs
+    public static void writeAllProperties(Path file, MediaPropertyMap properties) {
         var absPath = checkedPath(file);
 
+        properties.storage.forEach((property, value) -> writePropertyInternal(absPath, property, value));
+    }
+
+
+    private static String checkedPath(Path file) throws FileDoesNotExistException {
+        var absPath = file.toAbsolutePath();
+        if(!Files.exists(absPath)) {
+            throw new FileDoesNotExistException("File doesn't exist: '" + file + "'");
+        }
+
+        return absPath.toString();
+    }
+
+    private static void writePropertyInternal(String absPath, MediaProperty<?> property, Object value) {
         if(value == null) {
             clearMediaProperty(absPath, property.propOrdinal);
         }else{
@@ -146,18 +196,9 @@ public final class MediaFileUtils {
         }
     }
 
-
-    private static String checkedPath(Path file) throws FileDoesNotExistException {
-        var absPath = file.toAbsolutePath();
-        if(!Files.exists(absPath)) {
-            throw new FileDoesNotExistException("File doesn't exist: '" + file + "'");
-        }
-
-        return absPath.toString();
-    }
-
     private static native String readStringProperty(String filePath, int propertyKey);
     private static native int readIntProperty(String filePath, int propertyKey);
+    private static native MediaPropertyMap readAllMediaProperties(String filePath);
 
     private static native boolean hasMediaProperty(String filePath, int propertyKey);
     private static native boolean isValidMediaFile(String filePath);

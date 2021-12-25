@@ -2,4 +2,4 @@
 /target/
 .project
 .classpath
-MediaProps.dll
+src/main/resources/*.dll

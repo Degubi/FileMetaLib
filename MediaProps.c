@@ -1,142 +1,89 @@
 #include "shobjidl_core.h"
 #include "propkey.h"
-#include "jni.h"
-#include "string.h"
 
-static const int NULL_INT_VALUE = -1;                // This is fine because all of the number media property types are VT_UI4, which is unsigned
-static const int NON_MEDIA_FILE_ERROR = -2147467259; // Means 'unknown', "usually" happens when the file is not a media file
+#define PKEY_Author_hash                3521196938
+#define PKEY_Comment_hash               3521196940
+#define PKEY_Copyright_hash             1592722102
+#define PKEY_Keywords_hash              3521196939
+#define PKEY_Language_hash              3619066863
+#define PKEY_Media_SubTitle_hash        152552229
+#define PKEY_Media_Year_hash            4169439567
+#define PKEY_Title_hash                 3521196936
+#define PKEY_Video_Director_hash        1592722134
+#define PKEY_Audio_ChannelCount_hash    1332262441
+#define PKEY_Audio_EncodingBitrate_hash 1332262438
+#define PKEY_Media_AuthorUrl_hash       1592722169
+#define PKEY_Media_EncodedBy_hash       1592722173
+#define PKEY_Media_Duration_hash        1332262437
+#define PKEY_Audio_Format_hash          1332262436
+#define PKEY_Audio_SampleRate_hash      1332262439
+#define PKEY_Audio_SampleSize_hash      1332262440
 
-static PROPERTYKEY getPropertyKey(jint propOrdinal) {
+static unsigned long hashPropKey(PROPERTYKEY* property) {
+    WCHAR keyName[PKEYSTR_MAX];
+    PSStringFromPropertyKey(property, keyName, PKEYSTR_MAX);
+
+    unsigned long result = 5381;
+    WCHAR* str = keyName;
+
+    for(int c; (c = *str++);) {
+        result = ((result << 5) + result) + c;
+    }
+
+    return result;
+}
+
+static unsigned long hashPropKeyName(WCHAR str[]) {
+    unsigned long result = 5381;
+
+    for(int c; (c = *str++);) {
+        result = ((result << 5) + result) + c;
+    }
+
+    return result;
+}
+
+static const PROPERTYKEY* getPropertyKey(long propOrdinal) {
     switch(propOrdinal) {
-        case 0: return PKEY_Author;
-        case 1: return PKEY_Comment;
-        case 2: return PKEY_Copyright;
-        case 3: return PKEY_Keywords;
-        case 4: return PKEY_Language;
-        case 5: return PKEY_Media_SubTitle;
-        case 6: return PKEY_Media_Year;
-        case 7: return PKEY_Title;
-        case 8: return PKEY_Video_Director;
+        case 0:  return &PKEY_Author;
+        case 1:  return &PKEY_Comment;
+        case 2:  return &PKEY_Copyright;
+        case 3:  return &PKEY_Keywords;
+        case 4:  return &PKEY_Language;
+        case 5:  return &PKEY_Media_SubTitle;
+        case 6:  return &PKEY_Media_Year;
+        case 7:  return &PKEY_Title;
+        case 8:  return &PKEY_Video_Director;
+        case 9:  return &PKEY_Audio_ChannelCount;
+        case 10: return &PKEY_Audio_EncodingBitrate;
+        case 11: return &PKEY_Media_AuthorUrl;
+        case 12: return &PKEY_Media_EncodedBy;
+        case 13: return &PKEY_Media_Duration;
+        case 14: return &PKEY_Audio_Format;
+        case 15: return &PKEY_Audio_SampleRate;
+        case 16: return &PKEY_Audio_SampleSize;
     }
 }
 
-static HRESULT createUncheckedStoreForFile(jstring filePath, JNIEnv* env, IPropertyStore** store) {
-    const jchar* convertedFilePath = (*env)->GetStringChars(env, filePath, JNI_FALSE);
-    HRESULT res = SHGetPropertyStoreFromParsingName((PCWSTR) convertedFilePath, NULL, GPS_READWRITE, &IID_IPropertyStore, store);
-
-    (*env)->ReleaseStringChars(env, filePath, convertedFilePath);
-    return res;
-}
-
-static IPropertyStore* createStoreForFile(jstring filePath, JNIEnv* env) {
-    IPropertyStore* store;
-    HRESULT res = createUncheckedStoreForFile(filePath, env, &store);
-
-    if(FAILED(res)) {
-        const char* nativePath = (*env)->GetStringUTFChars(env, filePath, JNI_FALSE);
-
-        if(res == NON_MEDIA_FILE_ERROR) {  // Means 'unknown', "usually" happens when the file is not a media file
-            char message[128] = "The given file is not a media file: '";
-            strcat(message, nativePath);
-            strcat(message, "'\r\n");
-
-            (*env)->ThrowNew(env, (*env)->FindClass(env, "mediaprops/exception/NonMediaFileException"), message);
-        }else{
-            TCHAR* errorText;
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, res, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), (LPTSTR) &errorText, 0, NULL);
-
-            char message[128] = "An IO error happened with the file: '";
-            strcat(message, nativePath);
-            strcat(message, "', description: ");
-            strcat(message, (char*) errorText);
-
-            LocalFree(errorText);
-            (*env)->ThrowNew(env, (*env)->FindClass(env, "mediaprops/exception/MediaFileIOException"), message);
-        }
-
-        (*env)->ReleaseStringUTFChars(env, filePath, nativePath);
-        return NULL;
+static char* getPropertyFieldName(PROPERTYKEY* key) {
+    switch(hashPropKey(key)) {
+        case PKEY_Author_hash:                return "AUTHOR";
+        case PKEY_Comment_hash:               return "COMMENT";
+        case PKEY_Copyright_hash:             return "COPYRIGHT";
+        case PKEY_Keywords_hash:              return "KEYWORDS";
+        case PKEY_Language_hash:              return "LANGUAGE";
+        case PKEY_Media_SubTitle_hash:        return "SUB_TITLE";
+        case PKEY_Media_Year_hash:            return "YEAR";
+        case PKEY_Title_hash:                 return "TITLE";
+        case PKEY_Video_Director_hash:        return "DIRECTOR";
+        case PKEY_Audio_ChannelCount_hash:    return "AUDIO_CHANNEL_COUNT";
+        case PKEY_Audio_EncodingBitrate_hash: return "AUDIO_ENCODING_BITRATE";
+        case PKEY_Media_AuthorUrl_hash:       return "AUTHOR_URL";
+        case PKEY_Media_EncodedBy_hash:       return "ENCODED_BY";
+        case PKEY_Media_Duration_hash:        return "DURATION";
+        case PKEY_Audio_Format_hash:          return "AUDIO_FORMAT";
+        case PKEY_Audio_SampleRate_hash:      return "AUDIO_SAMPLE_RATE";
+        case PKEY_Audio_SampleSize_hash:      return "AUDIO_SAMPLE_SIZE";
+        default:                              return NULL;
     }
-
-    return store;
-}
-
-static PROPVARIANT getPropertyValue(jstring filePath, jint propertyKey, JNIEnv* env) {
-    IPropertyStore* store = createStoreForFile(filePath, env);
-    PROPVARIANT prop;
-
-    if(store != NULL) {
-        PROPERTYKEY key = getPropertyKey(propertyKey);
-
-        store->lpVtbl->GetValue(store, &key, &prop);
-        store->lpVtbl->Release(store);
-    }else{
-        prop.vt = VT_EMPTY;
-    }
-
-    return prop;
-}
-
-static void writePropertyValue(jstring filePath, jint propertyKey, PROPVARIANT* prop, JNIEnv* env) {
-    IPropertyStore* store = createStoreForFile(filePath, env);
-
-    if(store != NULL) {
-        PROPERTYKEY key = getPropertyKey(propertyKey);
-
-        store->lpVtbl->SetValue(store, &key, prop);
-        store->lpVtbl->Commit(store);
-        store->lpVtbl->Release(store);
-    }
-}
-
-
-extern JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_init(JNIEnv* env, jclass clazz) {
-    CoInitialize(NULL);
-}
-
-extern JNIEXPORT jboolean JNICALL Java_mediaprops_MediaFileUtils_hasMediaProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
-    return getPropertyValue(filePath, propertyKey, env).vt == VT_EMPTY ? JNI_FALSE : JNI_TRUE;
-}
-
-extern JNIEXPORT jboolean JNICALL Java_mediaprops_MediaFileUtils_isValidMediaFile(JNIEnv* env, jclass clazz, jstring filePath) {
-    IPropertyStore* store;
-    jboolean isValid = createUncheckedStoreForFile(filePath, env, &store) != NON_MEDIA_FILE_ERROR;
-
-    if(isValid) {
-        store->lpVtbl->Release(store);
-    }
-
-    return isValid;
-}
-
-extern JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_clearMediaProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
-    PROPVARIANT prop = { .vt = VT_EMPTY };
-
-    writePropertyValue(filePath, propertyKey, &prop, env);
-}
-
-extern JNIEXPORT jstring JNICALL Java_mediaprops_MediaFileUtils_readStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
-    PROPVARIANT variant = getPropertyValue(filePath, propertyKey, env);
-
-    return variant.vt == VT_EMPTY ? NULL : (*env)->NewString(env, (jchar*) variant.pwszVal, wcslen(variant.pwszVal));
-}
-
-extern JNIEXPORT jint JNICALL Java_mediaprops_MediaFileUtils_readIntProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
-    PROPVARIANT variant = getPropertyValue(filePath, propertyKey, env);
-
-    return variant.vt == VT_EMPTY ? NULL_INT_VALUE : variant.intVal;
-}
-
-extern JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_writeStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey, jstring propertyValue) {
-    const jchar* convertedValue = (*env)->GetStringChars(env, propertyValue, JNI_FALSE);
-    PROPVARIANT prop = { .vt = VT_LPWSTR, .pwszVal = (LPWSTR) convertedValue };
-
-    writePropertyValue(filePath, propertyKey, &prop, env);
-    (*env)->ReleaseStringChars(env, propertyValue, convertedValue);
-}
-
-extern JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_writeIntProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey, jint propertyValue) {
-    PROPVARIANT prop = { .vt = VT_I4, .lVal = propertyValue };
-
-    writePropertyValue(filePath, propertyKey, &prop, env);
 }

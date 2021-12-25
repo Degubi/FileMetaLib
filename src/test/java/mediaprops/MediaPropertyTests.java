@@ -5,9 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import java.util.Random;
 import mediaprops.exception.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.MethodOrderer.*;
 
+@TestMethodOrder(OrderAnnotation.class)
 public class MediaPropertyTests {
     private static final Path mp4Path = Path.of("src/test/resources/test.mp4");
     private static final Path txtPath = Path.of("src/test/resources/test.txt");
@@ -23,6 +26,7 @@ public class MediaPropertyTests {
 
 
     @Test
+    @Order(0)
     public void testWriteFileInUse() {
         useFileAlreadInUsage(() -> {
             var exception = assertThrows(MediaFileIOException.class, () -> MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, 200));
@@ -32,6 +36,7 @@ public class MediaPropertyTests {
     }
 
     @Test
+    @Order(0)
     public void testReadFileInUse() {
         useFileAlreadInUsage(() -> {
             var exception = assertThrows(MediaFileIOException.class, () -> MediaFileUtils.readProperty(mp4Path, MediaProperty.COMMENT));
@@ -41,6 +46,7 @@ public class MediaPropertyTests {
     }
 
     @Test
+    @Order(0)
     public void testWriteWithInvalidIntegerValue() {
         var exception = assertThrows(IllegalArgumentException.class, () -> MediaFileUtils.writeProperty(mp4Path, MediaProperty.YEAR, -3));
 
@@ -48,6 +54,7 @@ public class MediaPropertyTests {
     }
 
     @Test
+    @Order(0)
     public void testReadFromNonMediaFile() {
         var exception = assertThrows(NonMediaFileException.class, () -> MediaFileUtils.readProperty(txtPath, MediaProperty.COMMENT));
 
@@ -55,6 +62,7 @@ public class MediaPropertyTests {
     }
 
     @Test
+    @Order(0)
     public void testWriteToNonMediaFile() {
         var exception = assertThrows(NonMediaFileException.class, () -> MediaFileUtils.writeProperty(txtPath, MediaProperty.YEAR, 200));
 
@@ -62,18 +70,34 @@ public class MediaPropertyTests {
     }
 
     @Test
+    @Order(0)
     public void testValidMediaFile() {
         assertTrue(MediaFileUtils.isMediaFile(mp4Path));
     }
 
     @Test
+    @Order(0)
     public void testInvalidMediaFile() {
         assertFalse(MediaFileUtils.isMediaFile(txtPath));
     }
 
 
     @Test
-    @Order(0)
+    @Order(1)
+    public void testDefaultProperties() {
+        var expected = MediaPropertyMap.empty();
+        expected.put(MediaProperty.AUDIO_SAMPLE_SIZE, 16);
+        expected.put(MediaProperty.AUDIO_CHANNEL_COUNT, 2);
+        expected.put(MediaProperty.AUDIO_ENCODING_BITRATE, 8288);
+        expected.put(MediaProperty.DURATION, 4004000);
+        expected.put(MediaProperty.AUDIO_SAMPLE_RATE, 48000);
+        expected.put(MediaProperty.AUDIO_FORMAT, "{00001610-0000-0010-8000-00AA00389B71}");
+
+        assertEquals(expected, MediaFileUtils.readAllProperties(mp4Path));
+    }
+
+    @Test
+    @Order(2)
     public void testWriteAndReadStringProperty() {
         var value = generateString();
 
@@ -83,7 +107,7 @@ public class MediaPropertyTests {
     }
 
     @Test
-    @Order(0)
+    @Order(2)
     public void testWriteAndReadIntegerProperty() {
         var value = generateInt();
 
@@ -94,13 +118,13 @@ public class MediaPropertyTests {
 
 
     @Test
-    @Order(0)
+    @Order(3)
     public void testDoesntHaveProperty() {
         assertFalse(MediaFileUtils.hasProperty(mp4Path, MediaProperty.LANGUAGE));
     }
 
     @Test
-    @Order(0)
+    @Order(3)
     public void testNonExistingPropertyRead() {
         var exception = assertThrows(IllegalArgumentException.class, () -> MediaFileUtils.readProperty(mp4Path, MediaProperty.COPYRIGHT));
 
@@ -110,7 +134,7 @@ public class MediaPropertyTests {
 
 
     @Test
-    @Order(1)
+    @Order(4)
     public void testClearProperty() {
         assertFalse(MediaFileUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
 
