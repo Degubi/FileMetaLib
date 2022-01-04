@@ -97,7 +97,11 @@ public final class MediaFileUtils {
         }
     }
 
-    // TODO: docs
+    /**
+     * Function for reading out all properties with values
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
+     * @return Returns all of the media properties put into a {@link MediaPropertyMap}
+     */
     public static MediaPropertyMap readAllProperties(Path file) throws FileDoesNotExistException, MediaFileIOException, NonMediaFileException {
         return readAllMediaProperties(checkedPath(file));
     }
@@ -134,14 +138,29 @@ public final class MediaFileUtils {
         clearMediaProperty(checkedPath(file), property.propOrdinal);
     }
 
-    // TODO: docs
+    /**
+     * Function for clearing out the values of the given properties
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
+     * @param properties The properties to clear the value of
+     * If the given file is not a media file then a {@link NonMediaFileException} gets thrown
+     * If the operation fails because of a file system error (e.g the file is in use) a {@link MediaFileIOException} gets thrown
+     */
     public static void clearProperties(Path file, MediaProperty<?>... properties) {
-        // TODO implement this
+        var pathStr = checkedPath(file);
+
+        for(var prop : properties) {
+            clearMediaProperty(pathStr, prop.propOrdinal);
+        }
     }
 
-    // TODO: docs
-    public static void clearAllProperties(Path file) {
-        // TODO implement this
+    /**
+     * Function for clearing out the values of all of the properties
+     * @param file The file to work with. If the file doesn't exist an {@link FileDoesNotExistException} gets thrown
+     * If the given file is not a media file then a {@link NonMediaFileException} gets thrown
+     * If the operation fails because of a file system error (e.g the file is in use) a {@link MediaFileIOException} gets thrown
+     */
+    public static void clearAllProperties(Path file) throws FileDoesNotExistException {
+        clearAllMediaProperties(checkedPath(file));
     }
 
     /**
@@ -203,6 +222,7 @@ public final class MediaFileUtils {
     private static native boolean hasMediaProperty(String filePath, int propertyKey);
     private static native boolean isValidMediaFile(String filePath);
     private static native void clearMediaProperty(String filePath, int propertyKey);
+    private static native void clearAllMediaProperties(String filePath);
 
     private static native void writeStringProperty(String filePath, int propertyKey, String propertyValue);
     private static native void writeIntProperty(String filePath, int propertyKey, int propertyValue);

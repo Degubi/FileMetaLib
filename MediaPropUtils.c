@@ -84,7 +84,7 @@ static void writePropertyValue(jstring filePath, jint propertyKey, PROPVARIANT* 
 
 
 JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_init(JNIEnv* env, jclass clazz) {
-    CoInitialize(NULL);
+    CoInitializeEx(NULL, COINIT_MULTITHREADED);
 }
 
 JNIEXPORT jboolean JNICALL Java_mediaprops_MediaFileUtils_hasMediaProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
@@ -106,6 +106,26 @@ JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_clearMediaProperty(JNIEnv*
     PROPVARIANT prop = { .vt = VT_EMPTY };
 
     writePropertyValue(filePath, propertyKey, &prop, env);
+}
+
+JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_clearAllMediaProperties(JNIEnv* env, jclass clazz, jstring filePath) {
+    PROPVARIANT prop = { .vt = VT_EMPTY };
+    IPropertyStore* store = createStoreForFile(filePath, env);
+
+    if(store != NULL) {
+        DWORD propCount;
+        store->lpVtbl->GetCount(store, &propCount);
+
+        for(int i = 0; i < propCount; ++i) {
+            PROPERTYKEY* key;
+
+            store->lpVtbl->GetAt(store, i, key);
+            store->lpVtbl->SetValue(store, key, &prop);
+        }
+
+        store->lpVtbl->Commit(store);
+        store->lpVtbl->Release(store);
+    }
 }
 
 JNIEXPORT jstring JNICALL Java_mediaprops_MediaFileUtils_readStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {

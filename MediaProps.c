@@ -33,16 +33,6 @@ static unsigned long hashPropKey(PROPERTYKEY* property) {
     return result;
 }
 
-static unsigned long hashPropKeyName(WCHAR str[]) {
-    unsigned long result = 5381;
-
-    for(int c; (c = *str++);) {
-        result = ((result << 5) + result) + c;
-    }
-
-    return result;
-}
-
 static const PROPERTYKEY* getPropertyKey(long propOrdinal) {
     switch(propOrdinal) {
         case 0:  return &PKEY_Author;
