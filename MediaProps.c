@@ -33,7 +33,7 @@ static unsigned long hashPropKey(PROPERTYKEY* property) {
     return result;
 }
 
-static const PROPERTYKEY* getPropertyKey(long propOrdinal) {
+static const PROPERTYKEY* getPropertyKey(jint propOrdinal) {
     switch(propOrdinal) {
         case 0:  return &PKEY_Author;
         case 1:  return &PKEY_Comment;
@@ -52,6 +52,7 @@ static const PROPERTYKEY* getPropertyKey(long propOrdinal) {
         case 14: return &PKEY_Audio_Format;
         case 15: return &PKEY_Audio_SampleRate;
         case 16: return &PKEY_Audio_SampleSize;
+        default: return NULL;
     }
 }
 

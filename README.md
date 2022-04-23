@@ -38,13 +38,25 @@ All supported media properties are found in an enum like class: MediaProperty
 
 ```java
 var file = Path.of("myFile.mp4");
+var targetFile = Path.of("targetFile.mp4");
 
-MediaFileUtils.writeProperty(file, MediaProperty.YEAR, 2021);    // Write 2021 into the year field of the file
-MediaFileUtils.readProperty(file, MediaProperty.AUTHOR);         // Returns the author field's value or throws an IllegalArgumentException
-MediaFileUtils.readOptionalProperty(file, MediaProperty.AUTHOR); // Returns the property's value wrapped in an optional or Optional.empty
-MediaFileUtils.hasProperty(file, MediaProperty.LANGUAGE);        // Returns true if the file has a 'language' property
-MediaFileUtils.clearPropery(file, MediaProperty.TITLE);          // Clears the file's 'title' property
-MediaFileUtils.isMediaFile(file);                                // Returns true if the given file is a valid media file
+// Returns the 'author' field's value wrapped in an optional
+MediaFileUtils.readProperty(file, MediaProperty.AUTHOR);
+
+// Returns true if the file has a 'language' property
+MediaFileUtils.hasProperty(file, MediaProperty.LANGUAGE);
+
+// Returns true if the given file is a valid media file
+MediaFileUtils.isMediaFile(file);
+
+// Write 2021 into the 'year' field of the file
+MediaFileUtils.writeProperty(file, MediaProperty.YEAR, 2021);
+
+// Copies the year field from 'file' to 'targetFile'
+MediaFileUtils.copyProperty(file, targetFile, MediaProperty.YEAR);
+
+// Clears the file's 'title' property
+MediaFileUtils.clearPropery(file, MediaProperty.TITLE);
 ```
 
 ## Contributing

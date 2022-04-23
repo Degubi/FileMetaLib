@@ -4,13 +4,8 @@
 #include "string.h"
 #include "MediaProps.c"
 
-#define MEDIAPROP_DEBUG 1
 #define NULL_INT_VALUE -1                // This is fine because all of the number media property types are VT_UI4, which is unsigned
 #define NON_MEDIA_FILE_ERROR -2147467259 // Means 'unknown', "usually" happens when the file is not a media file
-
-#if MEDIAPROP_DEBUG
-#include "stdio.h"
-#endif
 
 
 static HRESULT createUncheckedStoreForFile(jstring filePath, JNIEnv* env, IPropertyStore** store) {
@@ -59,7 +54,7 @@ static PROPVARIANT getPropertyValue(jstring filePath, jint propertyKey, JNIEnv* 
     PROPVARIANT prop;
 
     if(store != NULL) {
-        PROPERTYKEY* key = getPropertyKey(propertyKey);
+        const PROPERTYKEY* key = getPropertyKey(propertyKey);
 
         store->lpVtbl->GetValue(store, key, &prop);
         store->lpVtbl->Release(store);
@@ -74,7 +69,7 @@ static void writePropertyValue(jstring filePath, jint propertyKey, PROPVARIANT* 
     IPropertyStore* store = createStoreForFile(filePath, env);
 
     if(store != NULL) {
-        PROPERTYKEY* key = getPropertyKey(propertyKey);
+        const PROPERTYKEY* key = getPropertyKey(propertyKey);
 
         store->lpVtbl->SetValue(store, key, prop);
         store->lpVtbl->Commit(store);
@@ -108,26 +103,6 @@ JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_clearMediaProperty(JNIEnv*
     writePropertyValue(filePath, propertyKey, &prop, env);
 }
 
-JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_clearAllMediaProperties(JNIEnv* env, jclass clazz, jstring filePath) {
-    PROPVARIANT prop = { .vt = VT_EMPTY };
-    IPropertyStore* store = createStoreForFile(filePath, env);
-
-    if(store != NULL) {
-        DWORD propCount;
-        store->lpVtbl->GetCount(store, &propCount);
-
-        for(int i = 0; i < propCount; ++i) {
-            PROPERTYKEY* key;
-
-            store->lpVtbl->GetAt(store, i, key);
-            store->lpVtbl->SetValue(store, key, &prop);
-        }
-
-        store->lpVtbl->Commit(store);
-        store->lpVtbl->Release(store);
-    }
-}
-
 JNIEXPORT jstring JNICALL Java_mediaprops_MediaFileUtils_readStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
     PROPVARIANT variant = getPropertyValue(filePath, propertyKey, env);
 
@@ -138,60 +113,6 @@ JNIEXPORT jint JNICALL Java_mediaprops_MediaFileUtils_readIntProperty(JNIEnv* en
     PROPVARIANT variant = getPropertyValue(filePath, propertyKey, env);
 
     return variant.vt == VT_EMPTY ? NULL_INT_VALUE : variant.intVal;
-}
-
-JNIEXPORT jobject JNICALL Java_mediaprops_MediaFileUtils_readAllMediaProperties(JNIEnv* env, jclass clazz, jstring filePath) {
-    IPropertyStore* store = createStoreForFile(filePath, env);
-    jclass mediaPropertyMapClass = (*env)->FindClass(env, "mediaprops/MediaPropertyMap");
-    jclass integerClass = (*env)->FindClass(env, "java/lang/Integer");
-    jclass mediaPropertyClass = (*env)->FindClass(env, "mediaprops/MediaProperty");
-    jmethodID addFunction = (*env)->GetMethodID(env, mediaPropertyMapClass, "put", "(Lmediaprops/MediaProperty;Ljava/lang/Object;)V");
-    jmethodID valueOfFunction = (*env)->GetStaticMethodID(env, integerClass, "valueOf", "(I)Ljava/lang/Integer;");
-    jobject result = (*env)->NewObject(env, mediaPropertyMapClass, (*env)->GetMethodID(env, mediaPropertyMapClass, "<init>", "()V"));
-
-    if(store != NULL) {
-        DWORD propCount;
-        store->lpVtbl->GetCount(store, &propCount);
-
-        for(int i = 0; i < propCount; ++i) {
-            PROPERTYKEY key;
-            PROPVARIANT value;
-
-            store->lpVtbl->GetAt(store, i, &key);
-            store->lpVtbl->GetValue(store, &key, &value);
-
-            char* fieldName = getPropertyFieldName(&key);
-            if(fieldName != NULL) {
-                jobject mapKey = (*env)->GetStaticObjectField(env, mediaPropertyClass, (*env)->GetStaticFieldID(env, mediaPropertyClass, fieldName, "Lmediaprops/MediaProperty;"));
-
-                switch(value.vt) {
-                    case VT_UI2 : (*env)->CallObjectMethod(env, result, addFunction, mapKey, (*env)->CallStaticObjectMethod(env, integerClass, valueOfFunction, value.uiVal)); break;
-                    case VT_UI4 : (*env)->CallObjectMethod(env, result, addFunction, mapKey, (*env)->CallStaticObjectMethod(env, integerClass, valueOfFunction, value.ulVal)); break;
-                    case VT_UI8 : (*env)->CallObjectMethod(env, result, addFunction, mapKey, (*env)->CallStaticObjectMethod(env, integerClass, valueOfFunction, value.uhVal)); break;
-                    case VT_LPWSTR : (*env)->CallObjectMethod(env, result, addFunction, mapKey, (*env)->NewString(env, (jchar*) value.pwszVal, wcslen(value.pwszVal))); break;
-
-                    #if MEDIAPROP_DEBUG
-                    default:
-                        printf("Property: %s (pid: %d), type: %d\n", fieldName, key.pid, value.vt);
-                        (*env)->CallObjectMethod(env, result, addFunction, mapKey, NULL);
-                        break;
-                    #endif
-                }
-            }
-            #if MEDIAPROP_DEBUG
-            else{
-                wchar_t guidStr[40] = {0};
-                StringFromGUID2(&key.fmtid, guidStr, 40);
-
-                printf("Unknown property field id: %d, name: %ls\n", key.pid, guidStr);
-            }
-            #endif
-        }
-
-        store->lpVtbl->Release(store);
-    }
-
-    return result;
 }
 
 JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_writeStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey, jstring propertyValue) {
