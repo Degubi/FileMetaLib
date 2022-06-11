@@ -16,6 +16,7 @@ public class MediaPropertyWriteTests {
         MediaFileUtils.clearProperty(mp4Path, MediaProperty.TITLE);
         MediaFileUtils.clearProperty(mp4Path, MediaProperty.COMMENT);
         MediaFileUtils.clearProperty(mp4Path, MediaProperty.YEAR);
+        MediaFileUtils.clearProperty(mp4Path, MediaProperty.AUTHOR);
     }
 
 
@@ -92,7 +93,15 @@ public class MediaPropertyWriteTests {
         assertTrue(MediaFileUtils.hasProperty(mp4Path, MediaProperty.COMMENT));
         assertFalse(MediaFileUtils.hasProperty(testFileCopyPath, MediaProperty.COMMENT));
 
+        MediaFileUtils.writeProperty(mp4Path, MediaProperty.AUTHOR, "yay");
+        assertTrue(MediaFileUtils.hasProperty(mp4Path, MediaProperty.AUTHOR));
+        assertFalse(MediaFileUtils.hasProperty(testFileCopyPath, MediaProperty.AUTHOR));
+
         MediaFileUtils.copyProperty(mp4Path, testFileCopyPath, MediaProperty.COMMENT);
+        MediaFileUtils.copyProperty(mp4Path, testFileCopyPath, MediaProperty.AUTHOR);
+
+        assertEquals(MediaFileUtils.readProperty(mp4Path, MediaProperty.COMMENT), MediaFileUtils.readProperty(testFileCopyPath, MediaProperty.COMMENT));
+        assertEquals(MediaFileUtils.readProperty(mp4Path, MediaProperty.AUTHOR), MediaFileUtils.readProperty(testFileCopyPath, MediaProperty.AUTHOR));
 
         Files.delete(testFileCopyPath);
     }

@@ -2,11 +2,33 @@
 #include "propkey.h"
 #include "jni.h"
 #include "string.h"
-#include "MediaProps.c"
 
 #define NULL_INT_VALUE -1                // This is fine because all of the number media property types are VT_UI4, which is unsigned
 #define NON_MEDIA_FILE_ERROR -2147467259 // Means 'unknown', "usually" happens when the file is not a media file
 
+
+static const PROPERTYKEY* getPropertyKey(jint propOrdinal) {
+    switch(propOrdinal) {
+        case 0:  return &PKEY_Author;
+        case 1:  return &PKEY_Comment;
+        case 2:  return &PKEY_Copyright;
+        case 3:  return &PKEY_Keywords;
+        case 4:  return &PKEY_Language;
+        case 5:  return &PKEY_Media_SubTitle;
+        case 6:  return &PKEY_Media_Year;
+        case 7:  return &PKEY_Title;
+        case 8:  return &PKEY_Video_Director;
+        case 9:  return &PKEY_Audio_ChannelCount;
+        case 10: return &PKEY_Audio_EncodingBitrate;
+        case 11: return &PKEY_Media_AuthorUrl;
+        case 12: return &PKEY_Media_EncodedBy;
+        case 13: return &PKEY_Media_Duration;
+        case 14: return &PKEY_Audio_Format;
+        case 15: return &PKEY_Audio_SampleRate;
+        case 16: return &PKEY_Audio_SampleSize;
+        default: return NULL;
+    }
+}
 
 static HRESULT createUncheckedStoreForFile(jstring filePath, JNIEnv* env, IPropertyStore** store) {
     const jchar* convertedFilePath = (*env)->GetStringChars(env, filePath, JNI_FALSE);
@@ -77,6 +99,12 @@ static void writePropertyValue(jstring filePath, jint propertyKey, PROPVARIANT* 
     }
 }
 
+static jstring getArrayPropertyStringElement(PROPVARIANT variant, JNIEnv* env) {
+    LPWSTR firstElement = variant.calpwstr.pElems[0];
+
+    return (*env)->NewString(env, (jchar*) firstElement, wcslen(firstElement));
+}
+
 
 JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_init(JNIEnv* env, jclass clazz) {
     CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -106,7 +134,9 @@ JNIEXPORT void JNICALL Java_mediaprops_MediaFileUtils_clearMediaProperty(JNIEnv*
 JNIEXPORT jstring JNICALL Java_mediaprops_MediaFileUtils_readStringProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
     PROPVARIANT variant = getPropertyValue(filePath, propertyKey, env);
 
-    return variant.vt == VT_EMPTY ? NULL : (*env)->NewString(env, (jchar*) variant.pwszVal, wcslen(variant.pwszVal));
+    return variant.vt == VT_EMPTY ? NULL :
+           (variant.vt & VT_VECTOR) != 0 ? getArrayPropertyStringElement(variant, env) :
+                                           (*env)->NewString(env, (jchar*) variant.pwszVal, wcslen(variant.pwszVal));
 }
 
 JNIEXPORT jint JNICALL Java_mediaprops_MediaFileUtils_readIntProperty(JNIEnv* env, jclass clazz, jstring filePath, jint propertyKey) {
